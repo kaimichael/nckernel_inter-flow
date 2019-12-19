@@ -1,0 +1,181 @@
+<!doctype html>
+<html ng-app="msc">
+    <head>
+        <title>Message Sequence Chart</title>
+        <script src="angular.min.js"></script>
+
+        <script>
+            angular.module("msc", []).controller("MessageSequenceChart", function($scope, $http) {
+                $scope.timescale = 20000;
+
+                $scope.select = function(frame) {
+                    $scope.selected = frame;
+                };
+
+                $scope.format = function(data) {
+                    if (!data) {
+                        return undefined;
+                    }
+
+                    var blocksize = 8;
+                    var linesize = 2;
+
+                    var bytes = data.split(" ");
+                    var blocks = []
+                    for (var b = 0; b < bytes.length; b += blocksize) {
+                        blocks.push(bytes.slice(b, b+blocksize).join(" "));
+                    }
+
+                    var lines = [];
+                    for (var l = 0; l < blocks.length; l += linesize) {
+                        lines.push(blocks.slice(l, l+linesize).join("  "));
+                    }
+
+                    return lines.join("\n");
+                };
+
+                $http({
+                    method: 'GET',
+                    url: "frames.json"
+                }).then(function (response) {
+                    frames = response.data.frames;
+                    $scope.height = 40 + $scope.timescale * Math.max.apply(undefined, frames.map(function (f) { return f.receive;}));
+
+                    $scope.frames = frames;
+                }, function (response) {
+                    alert("File frames.json not found");
+                });
+            });
+        </script>-
+
+        <link rel="stylesheet" href="pure-min.css"></link>
+        <link rel="stylesheet" href="grid-responsive-min.css"></link>
+        <style>
+            #details {
+                position: fixed;
+                left: 500px;
+                top: 10px;
+            }
+
+            .message {
+                stroke: black;
+                cursor: pointer;
+            }
+
+            .message line {
+                stroke-width: 2pt;
+            }
+
+            .message text {
+                font-family: monospace;
+            }
+
+            .coded {
+                stroke: blue;
+                fill: blue;
+            }
+
+            .feedback * {
+                stroke: red;
+                fill: red;
+            }
+
+            .lost {
+                stroke-dasharray: 10;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content" ng-controller="MessageSequenceChart">
+            <div id="graph">
+                <svg id="msc" width="480" ng-attr-height="{{height}}">
+                    <defs>
+                        <marker id="arrow-head" viewBox="0 -5 10 10" refX="6" markerWidth="3" markerHeight="3" orient="auto">
+                            <path class="arrow" d="M 0,-5 L 10,0 L 0,5"/>
+                        </marker>
+                    </defs>
+
+                    <g>
+                        <text class="packetno" x="10" y="20">Pkt</text>
+                        <line stroke="black" x1="50" x2="50" y1="10" ng-attr-y2="{{height}}"/>
+                        <text class="seqno" x="60" y="20">Seq</text>
+                        <text class="seqno" x="380" y="20">Seq</text>
+                        <line stroke="red" x1="420" x2="420" y1="10" ng-attr-y2="{{height}}"/>
+                        <text class="packetno" x="430" y="20">Pkt</text>
+                    </g>
+
+                    <g ng-repeat="frame in frames"
+                       class="message"
+                       ng-class="{coded: frame.coded, feedback: frame.feedback}"
+                       ng-click="select(frame)">
+                        <text class="packetno"
+                            ng-attr-x="{{frame.path === 'data' ? 10 : 430}}"
+                            ng-attr-y="{{40 + frame.send * timescale}}">
+                            {{frame.packetno}}
+                        </text>
+                        <text class="seqno"
+                            ng-attr-x="{{frame.path === 'data' ? 60 : 380}}"
+                            ng-attr-y="{{40 + frame.send * timescale}}">
+                            {{frame.seqno}}
+                        </text>
+                        <circle r="3"
+                                ng-attr-cx="{{frame.path === 'data' ? 110 : 370}}"
+                                ng-attr-cy="{{40 + frame.send * timescale}}"/>
+                        <line class="flow"
+                            ng-class="{lost: !frame.success}"
+                            marker-end="url(#arrow-head)"
+                            ng-attr-x1="{{frame.path === 'data' ? 110 : 370}}"
+                            ng-attr-x2="{{frame.path === 'data' ? 370 : 110}}"
+                            ng-attr-y1="{{40 + frame.send * timescale}}"
+                            ng-attr-y2="{{40 + frame.receive * timescale}}"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div id="details" ng-show="selected">
+                <table>
+                    <tr>
+                        <td>Path</td>
+                        <td>{{selected.path}}</td>
+                    </tr>
+                    <tr>
+                        <td>Sent</td>
+                        <td>{{selected.send}}</td>
+                    </tr>
+                    <tr>
+                        <td>Received</td>
+                        <td>{{selected.receive}}</td>
+                    </tr>
+                    <tr>
+                        <td>Lost</td>
+                        <td>{{selected.success ? false : true}}</td>
+                    </tr>
+                    <tr>
+                        <td>Length</td>
+                        <td>{{selected.length}}</td>
+                    </tr>
+                    <tr>
+                        <td>Packet number</td>
+                        <td>{{selected.packetno}}</td>
+                    </tr>
+                    <tr>
+                        <td>Sequence</td>
+                        <td>{{selected.seqno}}</td>
+                    </tr>
+                    <tr ng-show="selected.coded">
+                        <td>Coefficients</td>
+                        <td>
+                            <pre>{{selected.coefficients}}</pre>
+                        </td>
+                    </tr>
+                    <tr ng-show="selected.feedback">
+                        <td>Bitmap</td>
+                        <td>
+                            <pre>{{selected.bitmap}}</pre>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

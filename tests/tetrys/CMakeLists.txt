@@ -1,0 +1,5 @@
+add_executable(test_tetrys_encoder test_encoder.c)
+target_link_libraries(test_tetrys_encoder nckernel_static)
+
+add_executable(test_tetrys_decoder test_decoder.c)
+target_link_libraries(test_tetrys_decoder nckernel_static)

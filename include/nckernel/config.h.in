@@ -1,0 +1,24 @@
+#ifndef _NCK_CONFIG_H_
+#define _NCK_CONFIG_H_
+
+#define NCKERNEL_VERSION "@PROJECT_VERSION@"
+#define NCKERNEL_REVISION "@GIT_HASH@"
+#define NCKERNEL_BUILD "@CMAKE_BUILD_TYPE@"
+
+const char *nck_version();
+const char *nck_revision();
+
+#cmakedefine ENABLE_NOCODE
+#cmakedefine ENABLE_REP
+#cmakedefine ENABLE_NOACK
+#cmakedefine ENABLE_GACK
+#cmakedefine ENABLE_GSAW
+#cmakedefine ENABLE_PACE
+#cmakedefine ENABLE_PACEMG
+#cmakedefine ENABLE_CODARQ
+#cmakedefine ENABLE_TETRYS
+#cmakedefine ENABLE_INTERFLOW_SLIDING_WINDOW
+#cmakedefine ENABLE_SLIDING_WINDOW
+#cmakedefine ENABLE_CHAIN
+
+#endif /* _NCK_CONFIG_H_ */
